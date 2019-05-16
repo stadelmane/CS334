@@ -1,9 +1,13 @@
+import math
+
 class Node(object):
 	def __init__(self, numKeys):
 		self.numKeys = numKeys
 		self.keys = []
 		self.values = []
 		self.leaf = True
+		self.internal = False
+		self.isRoot = False
 
 
 	def addValue(self, key, value):
@@ -42,7 +46,7 @@ class Node(object):
 	def isFull(self):
 		return (len(self.keys) == self.numKeys - 1)
 
-	def split(self):
+	def rootSplit(self):
 		left = Node(self.numKeys)
 		right = Node(self.numKeys)
 		middle = 0
@@ -58,7 +62,7 @@ class Node(object):
 
 			#print("right keys" , right.keys , "right values" , right.values)
 		else:
-			middle = (len(self.keys) + 1) // 2
+			middle = (len(self.keys) - 1) // 2
 			#print(middle)
 
 			left.keys = self.keys[:middle]
@@ -74,63 +78,150 @@ class Node(object):
 		self.values = [left , right]
 		self.leaf = False
 
+	def leafSplit(self):
+		right = Node(self.numKeys)
+		left = Node(self.numKeys)
+		middle = 0
+		if len(self.keys) % 2 == 0:
+			middle = len(self.keys) // 2
+
+			left.keys = self.keys[:middle]
+			left.values = self.values[:middle]
+
+			right.keys = self.keys[middle:]
+			right.values = self.values[middle:]
+		else:
+			middle = (len(self.keys) - 1) // 2
+
+			left.keys = self.keys[:middle]
+			left.values = self.values[:middle]
+
+			right.keys = self.keys[middle:]
+			right.values = self.values[middle:]
+
+
+		return (right.keys[0], left, right) 
+
+	def internalSplit(self):
+		right = Node(self.numKeys)
+		left = Node(self.numKeys)
+		middle = 0
+		# print(self.keys)
+		if len(self.keys) % 2 == 0:
+			middle = len(self.keys) // 2
+
+			left.keys = self.keys[:middle]
+			left.values = self.values[:middle]
+
+			right.keys = self.keys[middle:]
+			right.values = self.values[middle:]
+		else:
+			middle = (len(self.keys) - 1) // 2
+
+			left.keys = self.keys[:middle]
+			left.values = self.values[:middle]
+
+			right.keys = self.keys[middle:]
+			right.values = self.values[middle:]
+		print("keys" , right.keys , left.keys)
+		print("lengths" , right.printMethod(), left.printMethod())
+		if len(self.keys) % 2 == 0:
+			middle = len(self.keys) // 2
+		else:
+			middle = math.ceil(len(self.keys) / 2) - 1
+		# print("yeet" , middle , self.keys)
+		return (self.keys[middle], left, right)
+
+
+
+
 
 
 class Bptree(object):
 	def __init__(self, numKeys):
 		self.numKeys = numKeys
 		self.root = Node(self.numKeys)
-		self.isRoot = True
+		self.root.isRoot = True 
 
 
 	def insert(self, key, value):
+		if self.root.leaf:
+			if self.root.isFull():
+				self.root.addValue(key, value)
+				return self.root.rootSplit()
 		return self.insertHelper(self.root, key, value)
 
-	def insertHelper(self, root, key, value):
-		
-		if self.root.leaf:
-			if not self.root.isFull():
-				print('hh1')
-				self.root.addValue(key, value)
+	def insertHelper(self, node, key, value):
+		# print(node.printMethod())
+		# print(node.leaf)
+		# x = input("enter here")
+		if node.leaf:
+			if not node.isFull():
+				#print('hh1')
+				node.addValue(key, value)
 				return None
 
 			else:
-				print('hh2')
-				self.root.addValue(key, value) #do we add value here?
-				self.root.split()
-				newEntry = (self.root.keys , self.root.values[1])
+				#print('hh2')
+				node.addValue(key, value)
+				newKey, left, right =  node.leafSplit()
+				#print(newKey, left.printMethod(), right.printMethod())
+				#print('1', node.printMethod())
+				node.keys = left.keys
+				node.values = left.values 
+				#print('2', node.printMethod())
+				newEntry = (newKey , right)		
+				#print("keys" , len(right.keys) , len(left.keys))
+				#print("lengths" , len(right.values) , len(left.values))
 				return newEntry
 
 		else:
-			print('hh3')
-			parent = None
-			child = self.root
+			child = node
 
 			
-			child = self.findHelper(self.root, key)
+			child = self.findHelper(node, key)
+			#print(child.printMethod)
 
 			newEntry = self.insertHelper(child, key, value)
 
 			if newEntry == None:
 				return None
 
-			elif not self.root.isFull():
-				self.root.addValue(newEntry[0], newEntry[1])
-				return None
-			else:
+			elif not node.isFull():
+				node.addValue(newEntry[0], newEntry[1])
 				return None
 
-	def findHelper(self, root, key):
+			else:
+				k, left, right = node.internalSplit()
+				node.keys = left.keys
+				node.values = left.values
+				newEntry = (k , right)
+				if node.isRoot:
+					node.isRoot = False 
+					newRoot = Node(self.numKeys)
+					newRoot.isRoot = True
+					newRoot.leaf = False
+					newRoot.keys.append(k)
+					newRoot.values.append(left)
+					newRoot.values.append(right)
+					newRoot.keys
+					newRoot.values
+
+
+
+				return newEntry
+
+
+	def findHelper(self, node, key):
 
 		maximum = 0
-		for i, item in enumerate(root.keys):
+		for i, item in enumerate(node.keys):
 			maximum = i
 			if key < item:
-				print("here" , i)
-				break
-				return root.values[i]
-		print("here")
-		return root.values[maximum + 1]
+				# print("here" , i)
+				return node.values[i]
+		# print("here" , i)
+		return node.values[i + 1]
 
 
 
