@@ -1,4 +1,5 @@
 import math
+from collections import defaultdict
 
 class Node(object):
 	def __init__(self, numKeys):
@@ -30,18 +31,22 @@ class Node(object):
 				self.values.append(value)
 				break
 
-	def printMethod(self, level = 0):
+	def printMethod(self, dic, level = 0):
 
-		print(level, str(self.keys))
+		# print(level, str(self.keys))
+		dic[level].append(str(self.keys))
 
 		if self.leaf:
 			for i in range(len(self.values)):
-				print(self.values[i])
+				dic[level].append(str(self.values[i]))
+				# print(level, self.values[i])
 
 		if not self.leaf:
 			for item in self.values:
 				#print(item.values)
-				item.printMethod(level+1)
+				item.printMethod(dic, level+1)
+
+		return dic
 
 
 	def isFull(self):
@@ -120,10 +125,11 @@ class Node(object):
 			middle = math.ceil(len(self.keys) / 2) - 1
 
 			left.keys = self.keys[:middle]
-			left.values = self.values[:middle]
+			left.values = self.values[:middle+1]
 
-			right.keys = self.keys[middle:]
-			right.values = self.values[middle:]
+			right.keys = self.keys[middle+1:]
+			right.values = self.values[middle+1:]
+
 		return (self.keys[middle], left, right)
 
 class Bptree(object):
@@ -195,14 +201,24 @@ class Bptree(object):
 
 	def findHelper(self, node, key):
 		for i, item in enumerate(node.keys):
-			maximum = i
 			if key < item:
 				return node.values[i]
 		return node.values[i + 1]
 
 
-	def getValue(self,key):
-		pass
+
+	def getValue(self, key):
+		node = self.root
+		while not node.leaf:
+			node = self.findHelper(node, key)
+		for i, item in enumerate(node.keys):
+			if key == item:
+				return node.values[i]
+		return 'None'
 
 	def printTree(self):
-		self.root.printMethod()
+		d = defaultdict(list)
+		objects = self.root.printMethod(d)
+		for i in range(len(d)):
+			print("Level: " , i , " " , d[i])		
+		# print(objects)
